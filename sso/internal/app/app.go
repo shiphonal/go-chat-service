@@ -1,7 +1,9 @@
 package app
 
+import grpcapp "ChatService/sso/internal/app/grpc"
+
 type App struct {
-	// TODO: init grpc App
+	gRPCServer *grpcapp.App
 }
 
 func New() *App {

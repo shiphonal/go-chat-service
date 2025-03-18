@@ -1,0 +1,133 @@
+syntax = "proto3";
+
+package sso;
+
+option go_package = "protos/gen/go/sso";
+
+service AuthService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  rpc IsAdmin(IsAdminRequest) returns (IsAdminResponse);
+  rpc IsModerator(IsModeratorRequest) returns (IsModeratorResponse);
+}
+
+service Profile {
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc ChangeName(ChangeNameRequest) returns (ChangeNameResponse);
+  rpc ChangeRole(ChangeRoleRequest) returns (ChangeRoleResponse);
+}
+
+message ChangeRoleRequest {
+  int64 user_id = 1;
+  bool is_admin = 2;
+  string new_role = 3;
+}
+
+message ChangeRoleResponse {
+  bool success = 1;
+}
+
+message ChangeNameRequest {
+  int64 user_id = 1;
+  string new_name = 2;
+}
+
+message ChangeNameResponse {
+  bool success = 1;
+}
+
+message ChangePasswordRequest {
+  int64 user_id = 1;
+  string old_password = 2;
+  string new_password = 3;
+}
+
+message ChangePasswordResponse {
+  bool success = 1;
+}
+
+message IsAdminRequest {
+  int64 user_id = 1;
+}
+
+message IsAdminResponse {
+  bool is_admin = 1;
+}
+
+message IsModeratorRequest {
+  int64 user_id = 1;
+}
+
+message IsModeratorResponse {
+  bool is_mod = 1;
+}
+
+message RegisterRequest {
+  string username = 1;
+  string email = 2;
+  string password = 3;
+}
+
+message RegisterResponse {
+  int64 user_id = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+  int64 app_id = 3;
+}
+
+message LoginResponse {
+  string token = 1;
+  string refresh_token = 2;
+}
+
+message LogoutRequest {
+  string token = 1;
+}
+
+message LogoutResponse {
+  bool answer = 1;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  string token = 1;
+  string refresh_token = 2;
+}
+
+message RedirectUserInfoRequest {
+  string user_id = 1;
+}
+
+message RedirectUserInfoResponse {
+  string username = 1;
+  string email = 2;
+  string role = 3;
+}
+
+message RefactorUserInfoRequest {
+  string user_id = 1;
+  string username = 2;
+  string email = 3;
+  string role = 4;
+}
+
+message RefactorUserInfoResponse {
+  bool answer = 1;
+}
+
+
+message BanUserRequest {
+  string user_id = 1;
+}
+
+message BanUserResponse {
+  bool answer = 1;
+}
