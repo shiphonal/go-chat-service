@@ -1,6 +1,7 @@
 package grpc
 
 import (
+	"ChatService/sso/internal/grpc/auth"
 	"fmt"
 	"google.golang.org/grpc"
 	"log/slog"
@@ -13,11 +14,15 @@ type App struct {
 	port       int
 }
 
-func New(log *slog.Logger, port int) *App {
-	// TODO: register auth and profile services
+func New(log *slog.Logger, authService auth.Auth, port int) *App {
+	grpcServer := grpc.NewServer()
+	auth.RegisterService(grpcServer, authService)
+
+	// TODO: register profile services
+
 	return &App{
 		log:        log,
-		gRPCServer: grpc.NewServer(),
+		gRPCServer: grpcServer,
 		port:       port,
 	}
 }

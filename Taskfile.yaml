@@ -1,0 +1,9 @@
+version: "3"
+
+tasks:
+  proto:
+    aliases:
+      - pro
+    desc: "Update protoFile"
+    cmds:
+      - protoc -I protos proto/sso/sso.proto --go_out=./protos/gen/go/sso --go_opt=paths=source_relative --go-grpc_out=./protos/gen/go/sso --go-grpc_opt=paths=source_relative

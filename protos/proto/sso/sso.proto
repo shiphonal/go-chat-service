@@ -8,9 +8,11 @@ service AuthService {
   rpc Register(RegisterRequest) returns (RegisterResponse);
   rpc Login(LoginRequest) returns (LoginResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+
   rpc IsAdmin(IsAdminRequest) returns (IsAdminResponse);
   rpc IsModerator(IsModeratorRequest) returns (IsModeratorResponse);
+
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
 }
 
 service Profile {
@@ -87,6 +89,7 @@ message LoginResponse {
 
 message LogoutRequest {
   string token = 1;
+  int64 user_id = 2;
 }
 
 message LogoutResponse {
@@ -100,34 +103,4 @@ message RefreshTokenRequest {
 message RefreshTokenResponse {
   string token = 1;
   string refresh_token = 2;
-}
-
-message RedirectUserInfoRequest {
-  string user_id = 1;
-}
-
-message RedirectUserInfoResponse {
-  string username = 1;
-  string email = 2;
-  string role = 3;
-}
-
-message RefactorUserInfoRequest {
-  string user_id = 1;
-  string username = 2;
-  string email = 3;
-  string role = 4;
-}
-
-message RefactorUserInfoResponse {
-  bool answer = 1;
-}
-
-
-message BanUserRequest {
-  string user_id = 1;
-}
-
-message BanUserResponse {
-  bool answer = 1;
 }

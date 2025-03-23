@@ -3,6 +3,11 @@ module ChatService
 go 1.24
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.2.2
+	golang.org/x/crypto v0.32.0
+)
+
+require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
@@ -39,7 +44,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
-	golang.org/x/crypto v0.32.0 // indirect
 	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/sys v0.29.0 // indirect
