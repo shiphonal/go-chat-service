@@ -50,3 +50,46 @@ func IsModValid(req *ssov1.IsModeratorRequest) error {
 	}
 	return nil
 }
+
+func ChangePasswordValid(req *ssov1.ChangePasswordRequest) error {
+	if req.GetUserId() == emptyValue {
+		return status.Error(codes.InvalidArgument, "user id required")
+	}
+	if req.GetNewPassword() == "" {
+		return status.Error(codes.InvalidArgument, "new password can not be empty")
+	}
+	if req.GetOldPassword() == "" {
+		return status.Error(codes.InvalidArgument, "old password required")
+	}
+	return nil
+}
+
+func ChangeNameValid(req *ssov1.ChangeNameRequest) error {
+	if req.GetUserId() == emptyValue {
+		return status.Error(codes.InvalidArgument, "user id required")
+	}
+	if req.GetNewName() == "" {
+		return status.Error(codes.InvalidArgument, "new name can not be empty")
+	}
+	return nil
+}
+
+func ChangeRoleValid(req *ssov1.ChangeRoleRequest) error {
+	if req.GetUserId() == emptyValue {
+		return status.Error(codes.InvalidArgument, "user id required")
+	}
+	if req.GetAdminId() == emptyValue {
+		return status.Error(codes.InvalidArgument, "admin id required")
+	}
+	if !RoleValid(req.NewRole) {
+		return status.Error(codes.InvalidArgument, "new role must have a valid role")
+	}
+	return nil
+}
+
+func RoleValid(role int32) bool {
+	if role > 4 || role < 1 {
+		return false
+	}
+	return true
+}

@@ -87,6 +87,29 @@ func (s *Storage) GetUser(ctx context.Context, email string) (models.User, error
 	return user, nil
 }
 
+func (s *Storage) GetUserById(ctx context.Context, id int64) (models.User, error) {
+	const op = "sqlite.GetUser"
+
+	stmt, err := s.db.Prepare("SELECT * FROM users WHERE id = ?")
+	if err != nil {
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+		}
+	}()
+	var user models.User
+	if err := stmt.QueryRowContext(ctx, id).
+		Scan(&user.ID, &user.UserName, &user.Email, &user.PassHash, &user.Role); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return models.User{}, fmt.Errorf("%s, %w", op, storage.ErrUserNotFound)
+		}
+		return models.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, nil
+}
+
 /*func (s *Storage) SaveApp(ctx context.Context, name, secret string) (int64, error) {
 	const op = "sqlite.SaveApp"
 
@@ -146,14 +169,14 @@ func (s *Storage) IsAdmin(ctx context.Context, id int64) (bool, error) {
 		}
 	}()
 
-	var role string
+	var role int32
 	if err := stmt.QueryRowContext(ctx, id).Scan(&role); err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			return false, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
 		}
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
-	return role == "admin", nil
+	return role == 3, nil
 }
 
 func (s *Storage) IsModerator(ctx context.Context, id int64) (bool, error) {
@@ -168,14 +191,14 @@ func (s *Storage) IsModerator(ctx context.Context, id int64) (bool, error) {
 		}
 	}()
 
-	var role string
+	var role int32
 	if err := stmt.QueryRowContext(ctx, id).Scan(&role); err != nil {
 		if errors.Is(err, storage.ErrUserNotFound) {
 			return false, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
 		}
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
-	return role == "mod", nil
+	return role == 2, nil
 }
 
 func (s *Storage) UpdatePassword(ctx context.Context, passHash []byte, id int64) (bool, error) {
@@ -219,8 +242,8 @@ func (s *Storage) UpdateName(ctx context.Context, id int64, newName string) (boo
 	return true, nil
 }
 
-func (s *Storage) ChangeRole(ctx context.Context, idPerson, id int64, newRole string) (bool, error) {
-	const op = "sqlite.ChangeRole"
+func (s *Storage) UpdateRole(ctx context.Context, id int64, newRole int32) (bool, error) {
+	const op = "sqlite.UpdateRole"
 	stmt, err := s.db.Prepare("UPDATE users SET role = ? WHERE id = ?")
 	if err != nil {
 		return false, fmt.Errorf("%s: %w", op, err)
@@ -230,12 +253,8 @@ func (s *Storage) ChangeRole(ctx context.Context, idPerson, id int64, newRole st
 		if err != nil {
 		}
 	}()
-	if success, err := s.IsAdmin(ctx, idPerson); success && err == nil {
-		if _, err := stmt.ExecContext(ctx, newRole, id); err != nil {
-			return false, fmt.Errorf("%s: %w", op, err)
-		}
-		return true, nil
-	} else {
+	if _, err := stmt.ExecContext(ctx, newRole, id); err != nil {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
+	return true, nil
 }

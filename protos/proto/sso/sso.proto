@@ -23,8 +23,9 @@ service Profile {
 
 message ChangeRoleRequest {
   int64 user_id = 1;
-  bool is_admin = 2;
-  string new_role = 3;
+  int64 admin_id = 2;
+  string password = 3;
+  int32 new_role = 4;
 }
 
 message ChangeRoleResponse {

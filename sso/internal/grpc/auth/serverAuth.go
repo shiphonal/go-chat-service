@@ -19,16 +19,16 @@ type Auth interface {
 	IsModerator(ctx context.Context, userID int64) (bool, error)
 }
 
-type serverAPI struct {
+type serverAuth struct {
 	ssov1.UnimplementedAuthServiceServer
 	auth Auth
 }
 
 func RegisterService(gRPCServer *grpc.Server, auth Auth) {
-	ssov1.RegisterAuthServiceServer(gRPCServer, &serverAPI{auth: auth})
+	ssov1.RegisterAuthServiceServer(gRPCServer, &serverAuth{auth: auth})
 }
 
-func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.LoginResponse, error) {
+func (s *serverAuth) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.LoginResponse, error) {
 	err := validator.LoginValid(req)
 	if err != nil {
 		return nil, err
@@ -45,7 +45,7 @@ func (s *serverAPI) Login(ctx context.Context, req *ssov1.LoginRequest) (*ssov1.
 
 }
 
-func (s *serverAPI) Logout(ctx context.Context, req *ssov1.LogoutRequest) (*ssov1.LogoutResponse, error) {
+func (s *serverAuth) Logout(ctx context.Context, req *ssov1.LogoutRequest) (*ssov1.LogoutResponse, error) {
 	err := validator.LogoutValid(req)
 	if err != nil {
 		return nil, err
@@ -55,11 +55,11 @@ func (s *serverAPI) Logout(ctx context.Context, req *ssov1.LogoutRequest) (*ssov
 	return &ssov1.LogoutResponse{Answer: answer}, nil
 }
 
-/*func (s *serverAPI) RefreshToken(ctx context.Context, req *ssov1.RefreshTokenRequest) (*ssov1.RefreshTokenResponse, error) {
+/*func (s *serverAuth) RefreshToken(ctx context.Context, req *ssov1.RefreshTokenRequest) (*ssov1.RefreshTokenResponse, error) {
 
 }*/
 
-func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*ssov1.RegisterResponse, error) {
+func (s *serverAuth) Register(ctx context.Context, req *ssov1.RegisterRequest) (*ssov1.RegisterResponse, error) {
 	err := validator.RegisterValid(req)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (s *serverAPI) Register(ctx context.Context, req *ssov1.RegisterRequest) (*
 	return &ssov1.RegisterResponse{UserId: id}, nil
 }
 
-func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
+func (s *serverAuth) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
 	err := validator.IsAdminValid(req)
 	if err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (s *serverAPI) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ss
 	return &ssov1.IsAdminResponse{IsAdmin: answer}, nil
 }
 
-func (s *serverAPI) IsModerator(ctx context.Context, req *ssov1.IsModeratorRequest) (*ssov1.IsModeratorResponse, error) {
+func (s *serverAuth) IsModerator(ctx context.Context, req *ssov1.IsModeratorRequest) (*ssov1.IsModeratorResponse, error) {
 	err := validator.IsModValid(req)
 	if err != nil {
 		return nil, err

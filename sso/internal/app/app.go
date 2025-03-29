@@ -1,8 +1,11 @@
 package app
 
 import (
+	authapp "ChatService/sso/internal/app/auth"
 	grpcapp "ChatService/sso/internal/app/grpc"
+	profileapp "ChatService/sso/internal/app/profile"
 	"ChatService/sso/internal/services/auth"
+	"ChatService/sso/internal/services/profile"
 	"ChatService/sso/internal/storage/sqlite"
 	"log/slog"
 	"time"
@@ -10,6 +13,8 @@ import (
 
 type App struct {
 	GRPCServer *grpcapp.App
+	AUTH       *auth.Auth
+	PROFILE    *profile.Profile
 }
 
 func New(log *slog.Logger, port int, storagePath string, tokenTTL time.Duration) *App {
@@ -17,13 +22,15 @@ func New(log *slog.Logger, port int, storagePath string, tokenTTL time.Duration)
 	if err != nil {
 		panic(err)
 	}
-	authService := auth.New(log, storage, storage, storage, tokenTTL)
+	authService := authapp.New(log, storage, storage, storage, tokenTTL)
 
-	// TODO: init profile service
+	profileService := profileapp.New(log, storage, storage, storage, tokenTTL)
 
-	grpcApp := grpcapp.New(log, authService, port)
+	grpcApp := grpcapp.New(log, authService, profileService, port)
 
 	return &App{
 		GRPCServer: grpcApp,
+		AUTH:       authService,
+		PROFILE:    profileService,
 	}
 }
