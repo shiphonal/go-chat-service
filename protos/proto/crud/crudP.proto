@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package sso;
+
+option go_package = "protos/gen/go/crud";
+
+service Message {
+  rpc SentMessage (SentMessageRequest) returns (SentMessageResponse);
+  rpc ShowMessages (ShowMessagesRequest) returns (ShowMessagesResponse);
+  rpc GetMessage (GetMessageRequest) returns (GetMessageResponse);
+  rpc UpdateMessage (UpdateMessageRequest) returns (UpdateMessageResponse);
+  rpc DeleteMessage (DeleteMessageRequest) returns (DeleteMessageResponse);
+}
+
+message SentMessageRequest {
+  int64 uid = 1;
+  string content = 2;
+  string type = 3;
+}
+
+message SentMessageResponse {
+  int64 mid = 1;
+  bool status = 2;
+}
+
+message GetMessageRequest {
+  int64 uid = 1;
+  int64 mid = 2;
+}
+
+message GetMessageResponse {
+  string message = 1;
+  bool status = 2;
+}
+
+message ShowMessagesRequest {
+  int64 uid = 1;
+}
+
+message ShowMessagesResponse {
+  bool status = 1;
+}
+
+message UpdateMessageRequest {
+  int64 uid = 1;
+  int64 mid = 2;
+  string new_content = 3;
+}
+
+message UpdateMessageResponse {
+  bool status = 1;
+}
+
+
+message DeleteMessageRequest {
+
+}
+
+message DeleteMessageResponse {
+
+}
