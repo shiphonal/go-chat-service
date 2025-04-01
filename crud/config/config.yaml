@@ -1,0 +1,6 @@
+env: "local"
+storage_path: "./crud/storage/crud.db"
+token_ttl: 1h
+grpc:
+  port: 5432
+  timeout: 1h
