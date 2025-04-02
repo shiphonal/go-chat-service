@@ -74,7 +74,7 @@ func (a *Auth) Login(ctx context.Context, email, password string, appID int) (st
 	return token, nil
 }
 
-func (a *Auth) Logout(ctx context.Context, token string, userID int64) (bool, error) {
+func (a *Auth) Logout(ctx context.Context, userID int64) (bool, error) {
 	const op = "auth.Logout"
 	log := a.Log.With(slog.String("op", op))
 	log.Debug("start")

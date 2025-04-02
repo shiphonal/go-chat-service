@@ -6,7 +6,7 @@ tasks:
       - mig
     desc: "Migrate db"
     cmds:
-      - go run ./cmd/migrator --storage-path=./storage/sso.db --migration-path=./config/migrations
+      - go run ./internal/lib/migrator --storage-path=./storage/sso.db --migration-path=./config/migrations
   initDocker:
     aliases:
       - docker

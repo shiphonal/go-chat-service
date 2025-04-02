@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	Env         string        `json:"env" env-default:"local"`
-	StoragePath string        `json:"storage_path" env-required:"true"`
-	TokenTTL    time.Duration `json:"token_ttl" env-required:"true"`
-	GRPCServer  *GRPCConfig   `json:"grpc"`
+	Env         string      `json:"env" env-default:"local"`
+	StoragePath string      `json:"storage_path" env-required:"true"`
+	AppID       string      `json:"app_id" env-required:"true"`
+	GRPCServer  *GRPCConfig `json:"grpc"`
 }
 
 type GRPCConfig struct {
@@ -19,7 +19,6 @@ type GRPCConfig struct {
 }
 
 func MustLoad() *Config {
-	const op = "config.MustLoad"
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
 		panic("CONFIG_PATH environment variable not set")

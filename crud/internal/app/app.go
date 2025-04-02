@@ -10,7 +10,7 @@ type App struct {
 	GRPCServer *grpcApp.App
 }
 
-func New(log *slog.Logger, tokenTTL time.Duration, storagePath string, port int) *App {
+func New(log *slog.Logger, tokenTTL time.Duration, port int) *App {
 	// TODO: init crud service
 	grpcSever := grpcApp.New(log, port)
 	return &App{
