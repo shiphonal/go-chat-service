@@ -1,3 +1,15 @@
 version: "3"
 
 tasks:
+  postres_up:
+    aliases:
+      - up
+    desc: "Update db"
+    cmds:
+      - goose postgres postgresql://postgres:secret@localhost:5432/postgres up
+  postres_down:
+    aliases:
+      - down
+    desc: "Downgrade db"
+    cmds:
+      - goose postgres postgresql://postgres:secret@localhost:5432/postgres down

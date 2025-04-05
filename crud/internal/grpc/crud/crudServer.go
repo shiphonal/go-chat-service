@@ -30,7 +30,7 @@ func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageReq
 
 	id, err := s.crud.SentMessage(ctx, req.GetUid(), req.GetContent())
 	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "failed to update message")
+		return nil, status.Error(codes.Unauthenticated, "failed to create message")
 	}
 	return &crudv1.SentMessageResponse{Mid: id}, nil
 }

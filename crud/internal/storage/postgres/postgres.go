@@ -6,8 +6,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"os"
 )
@@ -20,15 +18,16 @@ func New() (*Storage, error) {
 	const op = "storage.postgres.New"
 	password := os.Getenv("POSTGRES_PASSWORD")
 
-	db, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname))
+	db, err := sql.Open("postgres", fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",
+		user, password, host, port, dbname))
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 	defer db.Close()
 
-	if err := db.Ping(); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
 	return &Storage{db: db}, nil
@@ -36,15 +35,16 @@ func New() (*Storage, error) {
 
 const (
 	host   = "localhost"
-	port   = 5432
+	port   = "5432"
 	user   = "postgres"
-	dbname = "messages"
+	dbname = "postgres"
 )
 
 func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string) (int64, error) {
 	const op = "storage.postgres.CreateMessage"
+	// TODO: smth with postgres
 
-	stmt, err := s.db.Prepare("INSERT INTO messages (uid, content) VALUES (?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO postgres (uid, content) VALUES (?, ?)")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}

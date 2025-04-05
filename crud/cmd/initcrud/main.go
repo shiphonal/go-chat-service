@@ -18,6 +18,10 @@ func main() {
 	application := app.New(logger, cnf.GRPCServer.Port)
 	logger.Info("Starting application")
 
+	go func() {
+		application.GRPCServer.MustRun()
+	}()
+
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 

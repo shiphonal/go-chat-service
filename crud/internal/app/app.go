@@ -17,6 +17,7 @@ func New(log *slog.Logger, port int) *App {
 	if err != nil {
 		panic(err)
 	}
+	log.Info("Starting storage")
 	crudService := crudApp.New(log, storagePostgres)
 	grpcSever := grpcApp.New(log, crudService, port)
 	return &App{

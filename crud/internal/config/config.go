@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	Env         string      `json:"env" env-default:"local"`
-	StoragePath string      `json:"storage_path" env-required:"true"`
-	AppID       string      `json:"app_id" env-required:"true"`
-	GRPCServer  *GRPCConfig `json:"grpc"`
+	Env           string         `yaml:"env" env-default:"local"`
+	AppSecret     string         `yaml:"app_secret" env-required:"true" env:"APP_SECRET"`
+	GRPCServer    *GRPCConfig    `yaml:"grpc"`
+	ClientsConfig *ClientsConfig `yaml:"clients"`
 }
 
 type GRPCConfig struct {
@@ -18,8 +18,18 @@ type GRPCConfig struct {
 	Timeout time.Duration `yaml:"timeout"`
 }
 
+type Client struct {
+	Addr         string        `yaml:"addr"`
+	Timeout      time.Duration `yaml:"timeout"`
+	RetriesCount int           `yaml:"retries_count"`
+}
+
+type ClientsConfig struct {
+	SSO Client `yaml:"sso"`
+}
+
 func MustLoad() *Config {
-	configPath := os.Getenv("CONFIG_PATH")
+	configPath := os.Getenv("CONFIG_PATH_FOR_CRUD")
 	if configPath == "" {
 		panic("CONFIG_PATH environment variable not set")
 	}

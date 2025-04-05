@@ -32,15 +32,15 @@ func (a *App) MustRun() {
 
 func (a *App) Run() error {
 	const op = "grpc.App.Run"
-	a.logger.With(slog.String("op", op))
+	log := a.logger.With(slog.String("op", op))
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", a.port))
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	if err = a.GrpcServer.Serve(lis); err != nil {
+	log.Info("grpc server started")
+	if err := a.GrpcServer.Serve(lis); err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
-	a.logger.Info("grpc server started", slog.String("address", lis.Addr().String()))
 	return nil
 }
 
