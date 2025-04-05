@@ -1,11 +1,28 @@
 package main
 
-import "ChatService/crud/internal/config"
+import (
+	"ChatService/crud/internal/app"
+	"ChatService/crud/internal/config"
+	Logger "ChatService/crud/internal/lib/logger"
+	"os"
+	"os/signal"
+	"syscall"
+)
 
 func main() {
 	cnf := config.MustLoad()
-	_ = cnf
-	//TODO: init logger
-	//TODO: init app
-	//TODO: graceful shootDawn
+
+	logger := Logger.SetupLogger(cnf.Env)
+	logger.Info("Starting logger")
+
+	application := app.New(logger, cnf.GRPCServer.Port)
+	logger.Info("Starting application")
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	<-stop
+
+	application.GRPCServer.Stop()
+	logger.Info("Gracefully stopped")
 }

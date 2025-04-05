@@ -9,8 +9,8 @@ import (
 )
 
 type CRUD struct {
-	log           *slog.Logger
-	messageCRUDer MessageCRUDer
+	Log           *slog.Logger
+	MessageCRUDer MessageCRUDer
 }
 
 type MessageCRUDer interface {
@@ -22,11 +22,11 @@ type MessageCRUDer interface {
 
 func (m *CRUD) SentMessage(ctx context.Context, uid int64, content string) (int64, error) {
 	const op = "services.crud.SentMessage"
-	m.log.With(slog.String("op", op))
+	m.Log.With(slog.String("op", op))
 
-	id, err := m.messageCRUDer.CreateMessage(ctx, uid, content)
+	id, err := m.MessageCRUDer.CreateMessage(ctx, uid, content)
 	if err != nil {
-		m.log.Error("Failed to create message")
+		m.Log.Error("Failed to create message")
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
 	return id, nil
@@ -34,14 +34,14 @@ func (m *CRUD) SentMessage(ctx context.Context, uid int64, content string) (int6
 
 func (m *CRUD) DeleteMessage(ctx context.Context, uid int64) (bool, error) {
 	const op = "services.crud.DeleteMessage"
-	m.log.With(slog.String("op", op))
-	answer, err := m.messageCRUDer.DeleteMessage(ctx, uid)
+	m.Log.With(slog.String("op", op))
+	answer, err := m.MessageCRUDer.DeleteMessage(ctx, uid)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
-			m.log.Error("Message does not exist")
+			m.Log.Error("Message does not exist")
 			return false, fmt.Errorf("%s: %w", op, err)
 		}
-		m.log.Error("Failed to delete message")
+		m.Log.Error("Failed to delete message")
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	return answer, err
@@ -49,14 +49,14 @@ func (m *CRUD) DeleteMessage(ctx context.Context, uid int64) (bool, error) {
 
 func (m *CRUD) GetMessage(ctx context.Context, mid int64) (string, error) {
 	const op = "services.crud.GetMessage"
-	m.log.With(slog.String("op", op))
-	content, err := m.messageCRUDer.GetMessage(ctx, mid)
+	m.Log.With(slog.String("op", op))
+	content, err := m.MessageCRUDer.GetMessage(ctx, mid)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
-			m.log.Error("Message does not exist")
+			m.Log.Error("Message does not exist")
 			return "", fmt.Errorf("%s: %w", op, err)
 		}
-		m.log.Error("Failed to get message")
+		m.Log.Error("Failed to get message")
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
 	return content, err
@@ -64,14 +64,14 @@ func (m *CRUD) GetMessage(ctx context.Context, mid int64) (string, error) {
 
 func (m *CRUD) UpdateMessage(ctx context.Context, mid int64, newContent string) (bool, error) {
 	const op = "services.crud.UpdateMessage"
-	m.log.With(slog.String("op", op))
-	answer, err := m.messageCRUDer.UpdateMessage(ctx, mid, newContent)
+	m.Log.With(slog.String("op", op))
+	answer, err := m.MessageCRUDer.UpdateMessage(ctx, mid, newContent)
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
-			m.log.Error("Message does not exist")
+			m.Log.Error("Message does not exist")
 			return false, fmt.Errorf("%s: %w", op, err)
 		}
-		m.log.Error("Failed to u[date message")
+		m.Log.Error("Failed to u[date message")
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	return answer, nil
