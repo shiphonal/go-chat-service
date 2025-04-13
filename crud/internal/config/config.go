@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Env           string         `yaml:"env" env-default:"local"`
 	AppSecret     string         `yaml:"app_secret" env-required:"true" env:"APP_SECRET"`
+	StoragePath   string         `yaml:"storage_path" env-required:"true" env:"STORAGE_PATH"`
 	GRPCServer    *GRPCConfig    `yaml:"grpc"`
 	ClientsConfig *ClientsConfig `yaml:"clients"`
 }

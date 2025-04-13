@@ -37,7 +37,7 @@ func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageReq
 
 func (s *serverCRUD) DeleteMessage(ctx context.Context, req *crudv1.DeleteMessageRequest) (*crudv1.DeleteMessageResponse, error) {
 
-	answer, err := s.crud.DeleteMessage(ctx, req.GetUid())
+	answer, err := s.crud.DeleteMessage(ctx, req.GetMid())
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
 			return nil, status.Error(codes.PermissionDenied, "message not found")
@@ -48,7 +48,7 @@ func (s *serverCRUD) DeleteMessage(ctx context.Context, req *crudv1.DeleteMessag
 }
 
 func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageRequest) (*crudv1.GetMessageResponse, error) {
-	message, err := s.crud.GetMessage(ctx, req.GetUid())
+	message, err := s.crud.GetMessage(ctx, req.GetMid())
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
 			return nil, status.Error(codes.PermissionDenied, "message not found")
@@ -59,7 +59,7 @@ func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageReque
 }
 
 func (s *serverCRUD) UpdateMessage(ctx context.Context, req *crudv1.UpdateMessageRequest) (*crudv1.UpdateMessageResponse, error) {
-	answer, err := s.crud.UpdateMessage(ctx, req.GetUid(), req.GetNewContent())
+	answer, err := s.crud.UpdateMessage(ctx, req.GetMid(), req.GetNewContent())
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
 			return nil, status.Error(codes.PermissionDenied, "message not found")

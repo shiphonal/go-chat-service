@@ -11,9 +11,9 @@ type App struct {
 	GRPCServer *grpcApp.App
 }
 
-func New(log *slog.Logger, port int) *App {
+func New(log *slog.Logger, storagePath string, port int) *App {
 
-	storagePostgres, err := postgres.New()
+	storagePostgres, err := postgres.New(storagePath)
 	if err != nil {
 		panic(err)
 	}

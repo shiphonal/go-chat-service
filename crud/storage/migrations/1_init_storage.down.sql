@@ -1,6 +1,1 @@
-CREATE TABLE IF NOT EXISTS messages
-(
-    id INTEGER PRIMARY KEY,
-    content TEXT NOT NULL,
-    uid INTEGER
-);
+DROP TABLE IF EXISTS messages;

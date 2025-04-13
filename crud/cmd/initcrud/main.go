@@ -15,7 +15,7 @@ func main() {
 	logger := Logger.SetupLogger(cnf.Env)
 	logger.Info("Starting logger")
 
-	application := app.New(logger, cnf.GRPCServer.Port)
+	application := app.New(logger, cnf.StoragePath, cnf.GRPCServer.Port)
 	logger.Info("Starting application")
 
 	go func() {

@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"ChatService/crud/internal/domain/models"
 	"ChatService/crud/internal/storage"
 	"context"
 	"database/sql"
@@ -8,22 +9,28 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"os"
+
+	_ "github.com/golang-migrate/migrate/v4/database/sqlite3"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 type Storage struct {
 	db *sql.DB
 }
 
-func New() (*Storage, error) {
+func New(storagePath string) (*Storage, error) {
+	// TODO: with postgres
 	const op = "storage.postgres.New"
-	password := os.Getenv("POSTGRES_PASSWORD")
 
-	db, err := sql.Open("postgres", fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable",
-		user, password, host, port, dbname))
+	if _, err := os.Stat("sqlite3://" + storagePath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("%s: database file does not exist: %w", op, err)
+	}
+
+	db, err := sql.Open("sqlite3", storagePath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
-	defer db.Close()
 
 	err = db.Ping()
 	if err != nil {
@@ -33,18 +40,10 @@ func New() (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-const (
-	host   = "localhost"
-	port   = "5432"
-	user   = "postgres"
-	dbname = "postgres"
-)
-
 func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string) (int64, error) {
 	const op = "storage.postgres.CreateMessage"
-	// TODO: smth with postgres
 
-	stmt, err := s.db.Prepare("INSERT INTO postgres (uid, content) VALUES (?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO messages (uid, content) VALUES (?, ?)")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -69,7 +68,7 @@ func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string) 
 func (s *Storage) GetMessage(ctx context.Context, mid int64) (string, error) {
 	const op = "storage.postgres.GetMessage"
 
-	stmt, err := s.db.Prepare("SELECT content FROM messages WHERE id=?")
+	stmt, err := s.db.Prepare("SELECT * FROM messages WHERE id=?")
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -79,19 +78,14 @@ func (s *Storage) GetMessage(ctx context.Context, mid int64) (string, error) {
 		}
 	}()
 
-	res, err := stmt.QueryContext(ctx, mid)
-	if err != nil {
+	var message models.Message
+	if err := stmt.QueryRowContext(ctx, mid).Scan(&message.ID, &message.Content, &message.UserID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", fmt.Errorf("%s: %w", op, storage.ErrMessageNotExist)
 		}
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
-
-	var message string
-	if err := res.Scan(&message); err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
-	}
-	return message, nil
+	return message.Content, nil
 }
 
 func (s *Storage) DeleteMessage(ctx context.Context, mid int64) (bool, error) {
