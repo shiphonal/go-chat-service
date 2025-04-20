@@ -1,6 +1,7 @@
 package crud
 
 import (
+	jwtVal "ChatService/crud/internal/lib/jwt"
 	"ChatService/crud/internal/storage"
 	crudv1 "ChatService/protos/gen/go/crud"
 	"context"
@@ -19,14 +20,18 @@ type CRUD interface {
 
 type serverCRUD struct {
 	crudv1.UnimplementedMessageServer
-	crud CRUD
+	crud   CRUD
+	Secret string
 }
 
-func RegisterServer(gRPCServer *grpc.Server, crud CRUD) {
-	crudv1.RegisterMessageServer(gRPCServer, &serverCRUD{crud: crud})
+func RegisterServer(gRPCServer *grpc.Server, crud CRUD, secret string) {
+	crudv1.RegisterMessageServer(gRPCServer, &serverCRUD{crud: crud, Secret: secret})
 }
 
 func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageRequest) (*crudv1.SentMessageResponse, error) {
+	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
+	}
 
 	id, err := s.crud.SentMessage(ctx, req.GetUid(), req.GetContent())
 	if err != nil {
@@ -36,6 +41,9 @@ func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageReq
 }
 
 func (s *serverCRUD) DeleteMessage(ctx context.Context, req *crudv1.DeleteMessageRequest) (*crudv1.DeleteMessageResponse, error) {
+	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
+	}
 
 	answer, err := s.crud.DeleteMessage(ctx, req.GetMid())
 	if err != nil {
@@ -48,6 +56,10 @@ func (s *serverCRUD) DeleteMessage(ctx context.Context, req *crudv1.DeleteMessag
 }
 
 func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageRequest) (*crudv1.GetMessageResponse, error) {
+	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
+	}
+
 	message, err := s.crud.GetMessage(ctx, req.GetMid())
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {
@@ -59,6 +71,10 @@ func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageReque
 }
 
 func (s *serverCRUD) UpdateMessage(ctx context.Context, req *crudv1.UpdateMessageRequest) (*crudv1.UpdateMessageResponse, error) {
+	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
+	}
+
 	answer, err := s.crud.UpdateMessage(ctx, req.GetMid(), req.GetNewContent())
 	if err != nil {
 		if errors.Is(err, storage.ErrMessageNotExist) {

@@ -11,7 +11,7 @@ type App struct {
 	GRPCServer *grpcApp.App
 }
 
-func New(log *slog.Logger, storagePath string, port int) *App {
+func New(log *slog.Logger, storagePath string, secret string, port int) *App {
 
 	storagePostgres, err := postgres.New(storagePath)
 	if err != nil {
@@ -19,7 +19,7 @@ func New(log *slog.Logger, storagePath string, port int) *App {
 	}
 	log.Info("Starting storage")
 	crudService := crudApp.New(log, storagePostgres)
-	grpcSever := grpcApp.New(log, crudService, port)
+	grpcSever := grpcApp.New(log, crudService, secret, port)
 	return &App{
 		GRPCServer: grpcSever,
 	}
