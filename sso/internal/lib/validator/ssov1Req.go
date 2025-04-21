@@ -24,6 +24,9 @@ func LoginValid(req *ssov1.LoginRequest) error {
 }
 
 func LogoutValid(req *ssov1.LogoutRequest) error {
+	if req.GetUserId() == emptyValue {
+		return status.Error(codes.InvalidArgument, "user id required")
+	}
 	return nil
 }
 

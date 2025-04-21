@@ -7,12 +7,11 @@ import (
 )
 
 func New(log *slog.Logger,
-	userRefactor profile.UserRefactor, userAdmin profile.UserAdmin, userModer profile.UserModer, tokenTTL time.Duration) *profile.Profile {
+	userRefactor profile.UserRefactor, userAdmin profile.UserAdmin, tokenTTL time.Duration) *profile.Profile {
 	return &profile.Profile{
 		Log:          log,
 		UserRefactor: userRefactor,
 		UserAdmin:    userAdmin,
-		UserModer:    userModer,
 		TokenTTL:     tokenTTL,
 	}
 }

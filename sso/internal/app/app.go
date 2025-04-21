@@ -24,7 +24,7 @@ func New(log *slog.Logger, port int, storagePath string, tokenTTL time.Duration)
 	}
 	authService := authapp.New(log, storage, storage, storage, tokenTTL)
 
-	profileService := profileapp.New(log, storage, storage, storage, tokenTTL)
+	profileService := profileapp.New(log, storage, storage, tokenTTL)
 
 	grpcApp := grpcapp.New(log, authService, profileService, port)
 

@@ -40,6 +40,7 @@ var (
 
 func (a *Auth) Login(ctx context.Context, email, password string, appID int) (string, error) {
 	const op = "auth.Login"
+	a.Log.With(slog.String("op", op))
 	// Get User
 	user, err := a.UserProvider.GetUser(ctx, email)
 	if err != nil {
@@ -74,10 +75,10 @@ func (a *Auth) Login(ctx context.Context, email, password string, appID int) (st
 	return token, nil
 }
 
-func (a *Auth) Logout(ctx context.Context, userID int64) (bool, error) {
+func (a *Auth) Logout(ctx context.Context, token string) (bool, error) {
 	const op = "auth.Logout"
-	log := a.Log.With(slog.String("op", op))
-	log.Debug("start")
+	a.Log.With(slog.String("op", op))
+	a.Log.Info("user logged out successfully")
 	return true, nil
 }
 

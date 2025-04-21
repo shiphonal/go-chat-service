@@ -3,15 +3,17 @@ package app
 import (
 	crudApp "ChatService/crud/internal/app/crud"
 	grpcApp "ChatService/crud/internal/app/grpc"
+	"ChatService/crud/internal/clients/sso"
 	"ChatService/crud/internal/storage/postgres"
 	"log/slog"
 )
 
 type App struct {
 	GRPCServer *grpcApp.App
+	SSOClient  *sso.Client
 }
 
-func New(log *slog.Logger, storagePath string, secret string, port int) *App {
+func New(log *slog.Logger, storagePath string, secret string, port int, ssoClient *sso.Client) *App {
 
 	storagePostgres, err := postgres.New(storagePath)
 	if err != nil {
@@ -22,5 +24,6 @@ func New(log *slog.Logger, storagePath string, secret string, port int) *App {
 	grpcSever := grpcApp.New(log, crudService, secret, port)
 	return &App{
 		GRPCServer: grpcSever,
+		SSOClient:  ssoClient,
 	}
 }

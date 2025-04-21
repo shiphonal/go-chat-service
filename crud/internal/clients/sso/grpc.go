@@ -16,6 +16,7 @@ import (
 type Client struct {
 	apiAuth    ssov1.AuthServiceClient
 	apiProfile ssov1.ProfileClient
+	conn       *grpc.ClientConn
 	log        *slog.Logger
 }
 
@@ -33,7 +34,7 @@ func New(ctx context.Context, log *slog.Logger,
 		grpclog.WithLogOnEvents(grpclog.PayloadSent, grpclog.PayloadReceived),
 	}
 
-	cc, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+	ClientConn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainUnaryInterceptor(
 			grpcretry.UnaryClientInterceptor(retryOpts...),
 			grpclog.UnaryClientInterceptor(InterceptorLogger(log), logOpts...),
@@ -44,9 +45,15 @@ func New(ctx context.Context, log *slog.Logger,
 	}
 
 	return &Client{
-		apiAuth:    ssov1.NewAuthServiceClient(cc),
-		apiProfile: ssov1.NewProfileClient(cc),
+		apiAuth:    ssov1.NewAuthServiceClient(ClientConn),
+		apiProfile: ssov1.NewProfileClient(ClientConn),
+		log:        log,
+		conn:       ClientConn,
 	}, nil
+}
+
+func (c *Client) Close() error {
+	return c.conn.Close()
 }
 
 func InterceptorLogger(l *slog.Logger) grpclog.Logger {
@@ -65,4 +72,99 @@ func (c *Client) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	return resp.IsAdmin, nil
+}
+
+func (c *Client) IsModerator(ctx context.Context, userID int64) (bool, error) {
+	const op = "profile.IsModerator"
+
+	resp, err := c.apiAuth.IsModerator(ctx, &ssov1.IsModeratorRequest{
+		UserId: userID,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.IsMod, nil
+}
+
+func (c *Client) Login(ctx context.Context, email, password string, appID int64) (string, error) {
+	const op = "grpc.Login"
+
+	resp, err := c.apiAuth.Login(ctx, &ssov1.LoginRequest{
+		Email:    email,
+		Password: password,
+		AppId:    appID,
+	})
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Token, nil
+}
+
+func (c *Client) Logout(ctx context.Context, token string, userID int64) (bool, error) {
+	const op = "auth.Logout"
+	c.log.Debug("logout request", slog.Int64("user_id", userID))
+
+	resp, err := c.apiAuth.Logout(ctx, &ssov1.LogoutRequest{
+		Token:  token,
+		UserId: userID,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Answer, nil
+}
+
+func (c *Client) Register(ctx context.Context, email, password string) (int64, error) {
+	const op = "grpc.Register"
+
+	resp, err := c.apiAuth.Register(ctx, &ssov1.RegisterRequest{
+		Email:    email,
+		Password: password,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.UserId, nil
+}
+
+func (c *Client) ChangePassword(ctx context.Context, oldPassword, newPassword string, userID int64) (bool, error) {
+	const op = "profile.ChangePassword"
+
+	resp, err := c.apiProfile.ChangePassword(ctx, &ssov1.ChangePasswordRequest{
+		UserId:      userID,
+		OldPassword: oldPassword,
+		NewPassword: newPassword,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Success, nil
+}
+
+func (c *Client) ChangeName(ctx context.Context, userID int64, newName string) (bool, error) {
+	const op = "profile.ChangeName"
+
+	resp, err := c.apiProfile.ChangeName(ctx, &ssov1.ChangeNameRequest{
+		UserId:  userID,
+		NewName: newName,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Success, nil
+}
+
+func (c *Client) ChangeRole(ctx context.Context, adminID int64, targetUserID int64, newRole int32, adminPassword string) (bool, error) {
+	const op = "profile.ChangeRole"
+
+	resp, err := c.apiProfile.ChangeRole(ctx, &ssov1.ChangeRoleRequest{
+		AdminId:  adminID,
+		UserId:   targetUserID,
+		NewRole:  newRole,
+		Password: adminPassword,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Success, nil
 }

@@ -14,7 +14,7 @@ import (
 type Auth interface {
 	Login(ctx context.Context, email, password string, appID int) (string, error)
 	Register(ctx context.Context, username, email, password string) (int64, error)
-	Logout(ctx context.Context, userID int64) (bool, error)
+	Logout(ctx context.Context, token string) (bool, error)
 	IsAdmin(ctx context.Context, userID int64) (bool, error)
 	IsModerator(ctx context.Context, userID int64) (bool, error)
 }
@@ -51,7 +51,7 @@ func (s *serverAuth) Logout(ctx context.Context, req *ssov1.LogoutRequest) (*sso
 		return nil, err
 	}
 
-	answer, err := s.auth.Logout(ctx, req.UserId)
+	answer, err := s.auth.Logout(ctx, req.Token)
 	return &ssov1.LogoutResponse{Answer: answer}, nil
 }
 

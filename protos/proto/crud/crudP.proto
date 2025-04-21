@@ -13,7 +13,6 @@ service Message {
 }
 
 message SentMessageRequest {
-  int64 uid = 1;
   string content = 2;
   string type = 3;
   string token = 4;
@@ -24,7 +23,6 @@ message SentMessageResponse {
 }
 
 message GetMessageRequest {
-  int64 uid = 1;
   int64 mid = 2;
   string token = 3;
 }
@@ -34,7 +32,6 @@ message GetMessageResponse {
 }
 
 message ShowMessagesRequest {
-  int64 uid = 1;
   string token = 2;
 }
 
@@ -43,7 +40,6 @@ message ShowMessagesResponse {
 }
 
 message UpdateMessageRequest {
-  int64 uid = 1;
   int64 mid = 2;
   string new_content = 3;
   string token = 4;
@@ -54,7 +50,6 @@ message UpdateMessageResponse {
 }
 
 message DeleteMessageRequest {
-  int64 uid = 1;
   int64 mid = 2;
   string token = 3;
 }

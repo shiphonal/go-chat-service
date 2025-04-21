@@ -29,11 +29,12 @@ func RegisterServer(gRPCServer *grpc.Server, crud CRUD, secret string) {
 }
 
 func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageRequest) (*crudv1.SentMessageResponse, error) {
-	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
-		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
+	TokenResponse := jwtVal.ValidateToken(req.GetToken(), s.Secret)
+	if TokenResponse.Error != nil {
+		return nil, status.Error(codes.Unauthenticated, "failed in decoding token "+TokenResponse.Error.Error())
 	}
 
-	id, err := s.crud.SentMessage(ctx, req.GetUid(), req.GetContent())
+	id, err := s.crud.SentMessage(ctx, TokenResponse.UserID, req.GetContent())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "failed to create message")
 	}
@@ -41,7 +42,8 @@ func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageReq
 }
 
 func (s *serverCRUD) DeleteMessage(ctx context.Context, req *crudv1.DeleteMessageRequest) (*crudv1.DeleteMessageResponse, error) {
-	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+	TokenResponse := jwtVal.ValidateToken(req.GetToken(), s.Secret)
+	if TokenResponse.Error != nil {
 		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
 	}
 
@@ -56,7 +58,8 @@ func (s *serverCRUD) DeleteMessage(ctx context.Context, req *crudv1.DeleteMessag
 }
 
 func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageRequest) (*crudv1.GetMessageResponse, error) {
-	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+	TokenResponse := jwtVal.ValidateToken(req.GetToken(), s.Secret)
+	if TokenResponse.Error != nil {
 		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
 	}
 
@@ -71,7 +74,8 @@ func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageReque
 }
 
 func (s *serverCRUD) UpdateMessage(ctx context.Context, req *crudv1.UpdateMessageRequest) (*crudv1.UpdateMessageResponse, error) {
-	if success, err := jwtVal.ValidateToken(ctx, req.GetToken(), s.Secret); err != nil || !success {
+	TokenResponse := jwtVal.ValidateToken(req.GetToken(), s.Secret)
+	if TokenResponse.Error != nil {
 		return nil, status.Error(codes.Unauthenticated, "failed in decoding token")
 	}
 

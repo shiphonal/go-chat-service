@@ -1,13 +1,23 @@
 package jwt
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"github.com/golang-jwt/jwt/v5"
 	"time"
 )
 
-func ValidateToken(ctx context.Context, tokenString string, secret string) (bool, error) {
+type TokenInfo struct {
+	Error  error
+	UserID int64
+}
+
+var (
+	ErrTokenExpired = errors.New("token expired")
+	ErrInvalidToken = errors.New("invalid token")
+)
+
+func ValidateToken(tokenString string, secret string) TokenInfo {
 	// Decoding jwt
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -16,14 +26,14 @@ func ValidateToken(ctx context.Context, tokenString string, secret string) (bool
 		return []byte(secret), nil
 	})
 	if err != nil || !token.Valid {
-		return false, err
+		return TokenInfo{Error: err}
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		// Извлечение времени истечения
 		exp, ok := claims["exp"].(float64)
 		if !ok {
-			return false, fmt.Errorf("invalid expiration time")
+			return TokenInfo{Error: ErrInvalidToken}
 		}
 
 		// Преобразование времени истечения в time.Time
@@ -31,17 +41,14 @@ func ValidateToken(ctx context.Context, tokenString string, secret string) (bool
 
 		// Проверка, истек ли токен
 		if time.Now().After(expTime) {
-			return false, fmt.Errorf("token has expired")
+			return TokenInfo{Error: ErrTokenExpired}
 		}
 
-		// Проверка контекста на истечение времени
-		select {
-		case <-ctx.Done():
-			return false, fmt.Errorf("context deadline exceeded")
-		default:
-			// Контекст еще не истек
+		userId, ok := claims["userID"]
+		if !ok {
+			return TokenInfo{Error: ErrInvalidToken}
 		}
-		return true, nil
+		return TokenInfo{Error: nil, UserID: int64(userId.(float64))}
 	}
-	return false, fmt.Errorf("invalid token")
+	return TokenInfo{Error: ErrInvalidToken}
 }

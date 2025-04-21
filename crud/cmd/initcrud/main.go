@@ -2,8 +2,10 @@ package main
 
 import (
 	"ChatService/crud/internal/app"
+	"ChatService/crud/internal/clients/sso"
 	"ChatService/crud/internal/config"
 	Logger "ChatService/crud/internal/lib/logger"
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,7 +17,19 @@ func main() {
 	logger := Logger.SetupLogger(cnf.Env)
 	logger.Info("Starting logger")
 
-	application := app.New(logger, cnf.StoragePath, cnf.AppSecret, cnf.GRPCServer.Port)
+	ssoClient, err := sso.New(
+		context.Background(),
+		logger,
+		cnf.ClientsConfig.SSO.Addr,
+		cnf.ClientsConfig.SSO.Timeout,
+		cnf.ClientsConfig.SSO.RetriesCount,
+	)
+	if err != nil {
+		logger.Error("failed to initialize SSO client", err)
+		os.Exit(1)
+	}
+
+	application := app.New(logger, cnf.StoragePath, cnf.AppSecret, cnf.GRPCServer.Port, ssoClient)
 	logger.Info("Starting application")
 
 	go func() {

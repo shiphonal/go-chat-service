@@ -1,6 +1,17 @@
 env: "local"
 storage_path: "./crud/storage/crud.db"
 app_secret: "secret"
+
 grpc:
   port: 44045
   timeout: 1h
+
+clients:
+  sso:
+    addr: "localhost:44044"
+    storage_path: "./sso/storage/sso.db"
+    token_ttl: 1h
+    retries_count: 3
+    grpc:
+      port: 44044
+      timeout: 3s

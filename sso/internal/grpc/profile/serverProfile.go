@@ -15,8 +15,6 @@ type Profile interface {
 	ChangePassword(ctx context.Context, oldPassword string, password string, id int64) (bool, error)
 	ChangeName(ctx context.Context, id int64, newName string) (bool, error)
 	ChangeRole(ctx context.Context, password string, idAdmin int64, id int64, newRole int32) (bool, error)
-	IsAdmin(ctx context.Context, userID int64) (bool, error)
-	IsModerator(ctx context.Context, userID int64) (bool, error)
 }
 
 type serviceProfile struct {
@@ -73,36 +71,4 @@ func (s *serviceProfile) ChangeRole(ctx context.Context, req *ssov1.ChangeRoleRe
 		return nil, status.Error(codes.Unauthenticated, "failed with ChangeRole")
 	}
 	return &ssov1.ChangeRoleResponse{Success: answer}, nil
-}
-
-func (s *serviceProfile) IsAdmin(ctx context.Context, req *ssov1.IsAdminRequest) (*ssov1.IsAdminResponse, error) {
-	err := validator.IsAdminValid(req)
-	if err != nil {
-		return nil, err
-	}
-
-	answer, err := s.profile.IsAdmin(ctx, req.UserId)
-	if err != nil {
-		if errors.Is(err, auth.ErrInvalidCredentials) {
-			return nil, status.Error(codes.PermissionDenied, "invalid credentials")
-		}
-		return nil, status.Error(codes.Unauthenticated, "failed with isAdmin")
-	}
-	return &ssov1.IsAdminResponse{IsAdmin: answer}, nil
-}
-
-func (s *serviceProfile) IsModerator(ctx context.Context, req *ssov1.IsModeratorRequest) (*ssov1.IsModeratorResponse, error) {
-	err := validator.IsModValid(req)
-	if err != nil {
-		return nil, err
-	}
-
-	answer, err := s.profile.IsModerator(ctx, req.UserId)
-	if err != nil {
-		if errors.Is(err, auth.ErrInvalidCredentials) {
-			return nil, status.Error(codes.PermissionDenied, "invalid credentials")
-		}
-		return nil, status.Error(codes.Unauthenticated, "failed with isModerator")
-	}
-	return &ssov1.IsModeratorResponse{IsMod: answer}, nil
 }

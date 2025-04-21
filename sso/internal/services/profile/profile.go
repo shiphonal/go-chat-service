@@ -15,7 +15,6 @@ type Profile struct {
 	Log          *slog.Logger
 	UserRefactor UserRefactor
 	UserAdmin    UserAdmin
-	UserModer    UserModer
 	TokenTTL     time.Duration
 }
 
@@ -26,12 +25,7 @@ type UserRefactor interface {
 }
 
 type UserAdmin interface {
-	IsAdmin(ctx context.Context, id int64) (bool, error)
 	UpdateRole(ctx context.Context, id int64, newRole int32) (bool, error)
-}
-
-type UserModer interface {
-	IsModerator(ctx context.Context, id int64) (bool, error)
 }
 
 var (
@@ -114,29 +108,6 @@ func (p *Profile) ChangeRole(ctx context.Context, password string, idAdmin int64
 	success, err := p.UserAdmin.UpdateRole(ctx, id, newRole)
 	if err != nil {
 		p.Log.Error("Failed with refactor user")
-		return false, fmt.Errorf("%s: %w", op, err)
-	}
-	return success, nil
-}
-
-func (p *Profile) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	const op = "auth.IsAdmin"
-	p.Log.With(slog.String("op", op))
-
-	success, err := p.UserAdmin.IsAdmin(ctx, userID)
-	if err != nil {
-		p.Log.Warn("failed to get user")
-		return false, fmt.Errorf("%s: %w", op, err)
-	}
-	return success, nil
-}
-
-func (p *Profile) IsModerator(ctx context.Context, userID int64) (bool, error) {
-	const op = "auth.IsModerator"
-	p.Log.With(slog.String("op", op))
-	success, err := p.UserModer.IsModerator(ctx, userID)
-	if err != nil {
-		p.Log.Warn("failed to get user")
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	return success, nil
