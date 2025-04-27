@@ -1,6 +1,13 @@
 env: "local"
 storage_path: "./sso/storage/sso.db"
 token_ttl: 1h
+
 grpc:
   port: 44044
   timeout: 3s
+
+clients:
+  sso:
+    addr: "localhost:44044"  # Адрес SSO сервиса (берем из его конфига)
+    timeout: 3s              # Таймаут для запросов к SSO
+    retries_count: 3         # Количество попыток переподключения

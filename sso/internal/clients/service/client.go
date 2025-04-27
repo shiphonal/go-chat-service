@@ -1,4 +1,4 @@
-package sso
+package service
 
 import (
 	ssov1 "ChatService/protos/gen/go/sso"
@@ -13,15 +13,14 @@ import (
 	"time"
 )
 
-type Client struct {
+type ClientSSO struct {
 	apiAuth    ssov1.AuthServiceClient
 	apiProfile ssov1.ProfileClient
 	conn       *grpc.ClientConn
 	log        *slog.Logger
 }
 
-func New(ctx context.Context, log *slog.Logger,
-	addr string, timeout time.Duration, retriesCount int) (*Client, error) {
+func New(ctx context.Context, log *slog.Logger, addr string, timeout time.Duration, retriesCount int) (*ClientSSO, error) {
 	const op = "grpc.NewClient"
 
 	retryOpts := []grpcretry.CallOption{
@@ -44,7 +43,7 @@ func New(ctx context.Context, log *slog.Logger,
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &Client{
+	return &ClientSSO{
 		apiAuth:    ssov1.NewAuthServiceClient(ClientConn),
 		apiProfile: ssov1.NewProfileClient(ClientConn),
 		log:        log,
@@ -52,7 +51,7 @@ func New(ctx context.Context, log *slog.Logger,
 	}, nil
 }
 
-func (c *Client) Close() error {
+func (c *ClientSSO) Close() error {
 	return c.conn.Close()
 }
 
@@ -62,8 +61,8 @@ func InterceptorLogger(l *slog.Logger) grpclog.Logger {
 	})
 }
 
-func (c *Client) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	const op = "grpc.IsAdmin"
+func (c *ClientSSO) IsAdmin(ctx context.Context, userID int64) (bool, error) {
+	const op = "auth.IsAdmin"
 
 	resp, err := c.apiAuth.IsAdmin(ctx, &ssov1.IsAdminRequest{
 		UserId: userID,
@@ -74,8 +73,8 @@ func (c *Client) IsAdmin(ctx context.Context, userID int64) (bool, error) {
 	return resp.IsAdmin, nil
 }
 
-func (c *Client) IsModerator(ctx context.Context, userID int64) (bool, error) {
-	const op = "profile.IsModerator"
+func (c *ClientSSO) IsModerator(ctx context.Context, userID int64) (bool, error) {
+	const op = "auth.IsModerator"
 
 	resp, err := c.apiAuth.IsModerator(ctx, &ssov1.IsModeratorRequest{
 		UserId: userID,
@@ -86,8 +85,8 @@ func (c *Client) IsModerator(ctx context.Context, userID int64) (bool, error) {
 	return resp.IsMod, nil
 }
 
-func (c *Client) Login(ctx context.Context, email, password string, appID int64) (string, error) {
-	const op = "grpc.Login"
+func (c *ClientSSO) Login(ctx context.Context, email, password string, appID int64) (string, error) {
+	const op = "auth.Login"
 
 	resp, err := c.apiAuth.Login(ctx, &ssov1.LoginRequest{
 		Email:    email,
@@ -100,7 +99,7 @@ func (c *Client) Login(ctx context.Context, email, password string, appID int64)
 	return resp.Token, nil
 }
 
-func (c *Client) Logout(ctx context.Context, token string, userID int64) (bool, error) {
+func (c *ClientSSO) Logout(ctx context.Context, token string, userID int64) (bool, error) {
 	const op = "auth.Logout"
 	c.log.Debug("logout request", slog.Int64("user_id", userID))
 
@@ -114,11 +113,12 @@ func (c *Client) Logout(ctx context.Context, token string, userID int64) (bool, 
 	return resp.Answer, nil
 }
 
-func (c *Client) Register(ctx context.Context, email, password string) (int64, error) {
-	const op = "grpc.Register"
+func (c *ClientSSO) Register(ctx context.Context, username, email, password string) (int64, error) {
+	const op = "auth.Register"
 
 	resp, err := c.apiAuth.Register(ctx, &ssov1.RegisterRequest{
 		Email:    email,
+		Username: username,
 		Password: password,
 	})
 	if err != nil {
@@ -127,7 +127,7 @@ func (c *Client) Register(ctx context.Context, email, password string) (int64, e
 	return resp.UserId, nil
 }
 
-func (c *Client) ChangePassword(ctx context.Context, oldPassword, newPassword string, userID int64) (bool, error) {
+func (c *ClientSSO) ChangePassword(ctx context.Context, oldPassword, newPassword string, userID int64) (bool, error) {
 	const op = "profile.ChangePassword"
 
 	resp, err := c.apiProfile.ChangePassword(ctx, &ssov1.ChangePasswordRequest{
@@ -141,7 +141,7 @@ func (c *Client) ChangePassword(ctx context.Context, oldPassword, newPassword st
 	return resp.Success, nil
 }
 
-func (c *Client) ChangeName(ctx context.Context, userID int64, newName string) (bool, error) {
+func (c *ClientSSO) ChangeName(ctx context.Context, userID int64, newName string) (bool, error) {
 	const op = "profile.ChangeName"
 
 	resp, err := c.apiProfile.ChangeName(ctx, &ssov1.ChangeNameRequest{
@@ -154,7 +154,7 @@ func (c *Client) ChangeName(ctx context.Context, userID int64, newName string) (
 	return resp.Success, nil
 }
 
-func (c *Client) ChangeRole(ctx context.Context, adminID int64, targetUserID int64, newRole int32, adminPassword string) (bool, error) {
+func (c *ClientSSO) ChangeRole(ctx context.Context, adminID int64, targetUserID int64, newRole int32, adminPassword string) (bool, error) {
 	const op = "profile.ChangeRole"
 
 	resp, err := c.apiProfile.ChangeRole(ctx, &ssov1.ChangeRoleRequest{

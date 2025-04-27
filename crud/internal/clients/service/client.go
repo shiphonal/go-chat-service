@@ -1,0 +1,115 @@
+package service
+
+import (
+	crudv1 "ChatService/protos/gen/go/crud"
+	"context"
+	"fmt"
+	grpclog "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
+	grpcretry "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
+	"log/slog"
+	"time"
+)
+
+type ClientCRUD struct {
+	apiCRUD crudv1.MessageClient
+	conn    *grpc.ClientConn
+	log     *slog.Logger
+}
+
+func New(ctx context.Context, log *slog.Logger,
+	addr string, timeout time.Duration, retriesCount int) (*ClientCRUD, error) {
+	const op = "grpc.NewClient"
+
+	retryOpts := []grpcretry.CallOption{
+		grpcretry.WithCodes(codes.Aborted, codes.DeadlineExceeded, codes.NotFound),
+		grpcretry.WithPerRetryTimeout(timeout),
+		grpcretry.WithMax(uint(retriesCount)),
+	}
+
+	logOpts := []grpclog.Option{
+		grpclog.WithLogOnEvents(grpclog.PayloadSent, grpclog.PayloadReceived),
+	}
+
+	ClientConn, err := grpc.DialContext(ctx, addr, grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(
+			grpcretry.UnaryClientInterceptor(retryOpts...),
+			grpclog.UnaryClientInterceptor(InterceptorLogger(log), logOpts...),
+		))
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return &ClientCRUD{
+		apiCRUD: crudv1.NewMessageClient(ClientConn),
+		log:     log,
+		conn:    ClientConn,
+	}, nil
+}
+
+func (c *ClientCRUD) Close() error {
+	return c.conn.Close()
+}
+
+func InterceptorLogger(l *slog.Logger) grpclog.Logger {
+	return grpclog.LoggerFunc(func(ctx context.Context, lvl grpclog.Level, msg string, fields ...any) {
+		l.Log(ctx, slog.Level(lvl), msg, fields...)
+	})
+}
+
+func (c *ClientCRUD) GetMessage(ctx context.Context, token string, mid int64) (string, error) {
+	const op = "crud.GetMessage"
+
+	resp, err := c.apiCRUD.GetMessage(ctx, &crudv1.GetMessageRequest{
+		Token: token,
+		Mid:   mid,
+	})
+	if err != nil {
+		return "", fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Message, nil
+}
+
+func (c *ClientCRUD) SentMessage(ctx context.Context, typeMessage, token string, uid int64) (int64, error) {
+	const op = "crud.SentMessage"
+
+	resp, err := c.apiCRUD.SentMessage(ctx, &crudv1.SentMessageRequest{
+		Type:  typeMessage,
+		Token: token,
+		Uid:   uid,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Mid, nil
+}
+
+func (c *ClientCRUD) UpdateMessage(ctx context.Context, newContent, token string, mid int64) (bool, error) {
+	const op = "crud.UpdateMessage"
+
+	resp, err := c.apiCRUD.UpdateMessage(ctx, &crudv1.UpdateMessageRequest{
+		Token:      token,
+		NewContent: newContent,
+		Mid:        mid,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Status, nil
+}
+
+func (c *ClientCRUD) DeleteMessage(ctx context.Context, token string, mid int64) (bool, error) {
+	const op = "crud.DeleteMessage"
+
+	resp, err := c.apiCRUD.DeleteMessage(ctx, &crudv1.DeleteMessageRequest{
+		Token: token,
+		Mid:   mid,
+	})
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	return resp.Status, nil
+}

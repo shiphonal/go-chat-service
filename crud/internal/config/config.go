@@ -7,26 +7,27 @@ import (
 )
 
 type Config struct {
-	Env           string         `yaml:"env" env-default:"local"`
-	AppSecret     string         `yaml:"app_secret" env-required:"true" env:"APP_SECRET"`
-	StoragePath   string         `yaml:"storage_path" env-required:"true" env:"STORAGE_PATH"`
-	GRPCServer    *GRPCConfig    `yaml:"grpc"`
-	ClientsConfig *ClientsConfig `yaml:"clients"`
-}
+	Env       string `yaml:"env" env:"ENV" env-default:"local"`
+	AppSecret string `yaml:"app_secret" env:"APP_SECRET" env-required:"true"`
 
-type GRPCConfig struct {
-	Port    int           `yaml:"port"`
-	Timeout time.Duration `yaml:"timeout"`
-}
+	Storage struct {
+		Path string `yaml:"path" env:"STORAGE_PATH" env-required:"true"`
+	} `yaml:"storage"`
 
-type Client struct {
-	Addr         string        `yaml:"addr"`
-	Timeout      time.Duration `yaml:"timeout"`
-	RetriesCount int           `yaml:"retries_count"`
-}
+	GRPC struct {
+		Server struct {
+			Port    int           `yaml:"port" env:"GRPC_PORT"`
+			Timeout time.Duration `yaml:"timeout" env:"GRPC_TIMEOUT"`
+		} `yaml:"server"`
+	} `yaml:"grpc"`
 
-type ClientsConfig struct {
-	SSO Client `yaml:"sso"`
+	Clients struct {
+		CRUD struct {
+			Addr         string        `yaml:"addr" env:"CRUD_ADDR"`
+			Timeout      time.Duration `yaml:"timeout" env:"CRUD_TIMEOUT"`
+			RetriesCount int           `yaml:"retries_count" env:"CRUD_RETRIES_COUNT"`
+		} `yaml:"crud"`
+	} `yaml:"clients"`
 }
 
 func MustLoad() *Config {

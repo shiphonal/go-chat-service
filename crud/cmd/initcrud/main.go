@@ -2,13 +2,19 @@ package main
 
 import (
 	"ChatService/crud/internal/app"
-	"ChatService/crud/internal/clients/sso"
+	client "ChatService/crud/internal/clients/app"
 	"ChatService/crud/internal/config"
+
 	Logger "ChatService/crud/internal/lib/logger"
 	"context"
+	"errors"
+
+	"net/http"
 	"os"
 	"os/signal"
+
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -17,19 +23,16 @@ func main() {
 	logger := Logger.SetupLogger(cnf.Env)
 	logger.Info("Starting logger")
 
-	ssoClient, err := sso.New(
-		context.Background(),
-		logger,
-		cnf.ClientsConfig.SSO.Addr,
-		cnf.ClientsConfig.SSO.Timeout,
-		cnf.ClientsConfig.SSO.RetriesCount,
-	)
-	if err != nil {
-		logger.Error("failed to initialize SSO client", err)
-		os.Exit(1)
-	}
+	clientFabric := client.ClientMustLoad(cnf, logger)
 
-	application := app.New(logger, cnf.StoragePath, cnf.AppSecret, cnf.GRPCServer.Port, ssoClient)
+	go func() {
+		logger.Info("Starting HTTP server on :8080")
+		if err := clientFabric.HttpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			logger.Error("HTTP server error", err)
+		}
+	}()
+
+	application := app.New(logger, cnf.Storage.Path, cnf.AppSecret, cnf.GRPC.Server.Port, clientFabric.CRUD)
 	logger.Info("Starting application")
 
 	go func() {
@@ -42,5 +45,11 @@ func main() {
 	<-stop
 
 	application.GRPCServer.Stop()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := clientFabric.HttpServer.Shutdown(ctx); err != nil {
+		logger.Error("HTTP shutdown error", err)
+	}
+
 	logger.Info("Gracefully stopped")
 }

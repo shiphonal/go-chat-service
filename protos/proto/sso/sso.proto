@@ -90,6 +90,7 @@ message LoginResponse {
 
 message LogoutRequest {
   int64 user_id = 2;
+  string token = 1;
 }
 
 message LogoutResponse {

@@ -1,17 +1,17 @@
+# config.yaml для message-сервиса (работает на порту 44045)
 env: "local"
-storage_path: "./crud/storage/crud.db"
 app_secret: "secret"
 
+storage:
+  path: "./message/storage/messages.db"  # Отдельное хранилище для сообщений
+
 grpc:
-  port: 44045
-  timeout: 1h
+  server:
+    port: 44045  # Порт, на котором работает message-сервис
+    timeout: 1h   # Таймаут для серверных операций
 
 clients:
-  sso:
-    addr: "localhost:44044"
-    storage_path: "./sso/storage/sso.db"
-    token_ttl: 1h
+  crud:
+    addr: "localhost:44045"  # Для внутреннего использования (сам себя)
+    timeout: 3s
     retries_count: 3
-    grpc:
-      port: 44044
-      timeout: 3s
