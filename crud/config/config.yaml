@@ -3,7 +3,7 @@ env: "local"
 app_secret: "secret"
 
 storage:
-  path: "./message/storage/messages.db"  # Отдельное хранилище для сообщений
+  path: "./crud/storage/crud.db"  # Отдельное хранилище для сообщений
 
 grpc:
   server:

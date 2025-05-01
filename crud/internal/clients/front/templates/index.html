@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat Service</title>
+  <link rel="stylesheet" href="../static/styles.css">
+</head>
+<body>
+<div class="container">
+  <header class="header">
+    <h1>Chat Service</h1>
+    <button id="logout-btn" class="btn">Logout</button>
+  </header>
+
+  <div class="chat-container">
+    <div class="messages" id="messages">
+      <!-- Messages will be displayed here -->
+    </div>
+
+    <div class="message-form">
+      <form id="message-form">
+        <select id="message-type" required>
+          <option value="text" disabled selected>Select message type</option>
+          <option value="text">Text</option>
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+        </select>
+        <textarea id="message-content" placeholder="Type your message here..." required></textarea>
+        <button type="submit" class="btn">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="../static/script.js"></script>
+</body>
+</html>

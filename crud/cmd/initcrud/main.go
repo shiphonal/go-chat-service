@@ -2,7 +2,7 @@ package main
 
 import (
 	"ChatService/crud/internal/app"
-	client "ChatService/crud/internal/clients/app"
+	client "ChatService/crud/internal/clients"
 	"ChatService/crud/internal/config"
 
 	Logger "ChatService/crud/internal/lib/logger"
