@@ -18,4 +18,4 @@ tasks:
       - mig
     desc: "Migrate db"
     cmds:
-      - go run ./internal/lib/migrator --storage-path=./storage/crud.db --migration-path=./storage/migrations
+      - go run ./internal/lib/migrator --storage-path=./storage/crud.db --migration-path=./config/migrations

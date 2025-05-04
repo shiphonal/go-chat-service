@@ -28,7 +28,10 @@ message GetMessageRequest {
 }
 
 message GetMessageResponse {
-  string message = 1;
+  int64 id = 1;
+  string content = 2;
+  string type = 3;
+  string timestamp = 4;
 }
 
 message ShowMessagesRequest {
@@ -36,7 +39,7 @@ message ShowMessagesRequest {
 }
 
 message ShowMessagesResponse {
-  bool status = 1;
+  repeated GetMessageResponse message = 1;
 }
 
 message UpdateMessageRequest {

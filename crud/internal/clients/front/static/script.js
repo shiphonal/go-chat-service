@@ -1,90 +1,144 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we're on the login page
-    if (document.getElementById('login-form')) {
-        const loginForm = document.getElementById('login-form');
+    const messageForm = document.getElementById('message-form');
+    const messagesContainer = document.getElementById('messages');
+    const messageInput = document.getElementById('message-content');
+    const messageTypeSelect = document.getElementById('message-type');
 
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    // Текущий пользователь (из токена)
+    // TODO: put userID, Add Time and Type in messages
+    const currentUserId = 9; // Из вашего хардкодного токена
 
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+    // Загрузка сообщений при старте
+    loadMessages();
 
-            // Here you would typically make an API call to authenticate
-            // For now, we'll just redirect to the chat page
-            document.cookie = `token=simulated_token_for_${username}; path=/`;
-            window.location.href = '../templates/index.html';
-        });
-    }
+    async function loadMessages() {
+        try {
+            showLoading(true);
+            const response = await fetch('/api/messages');
 
-    // Check if we're on the chat page
-    if (document.getElementById('logout-btn')) {
-        const logoutBtn = document.getElementById('logout-btn');
-        const messageForm = document.getElementById('message-form');
-
-        logoutBtn.addEventListener('click', function() {
-            document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            window.location.href = '/static/login.html';
-        });
-
-        messageForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-
-            const messageType = document.getElementById('message-type').value;
-            const content = document.getElementById('message-content').value;
-
-            try {
-                const response = await fetch('/messages', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: `text=${encodeURIComponent(messageType)}&content=${encodeURIComponent(content)}`
-                });
-
-                if (response.ok) {
-                    const result = await response.text();
-                    console.log('Message sent:', result);
-                    document.getElementById('message-content').value = '';
-
-                    // Add message to the UI
-                    const messagesDiv = document.getElementById('messages');
-                    const messageDiv = document.createElement('div');
-                    messageDiv.className = 'message sent';
-                    messageDiv.innerHTML = `
-                        <div class="message-info">You (${new Date().toLocaleTimeString()})</div>
-                        <div class="message-content">${content}</div>
-                    `;
-                    messagesDiv.appendChild(messageDiv);
-                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                } else {
-                    console.error('Failed to send message');
-                }
-            } catch (error) {
-                console.error('Error:', error);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
-        });
 
-        // Simulate loading some messages (in a real app, you'd fetch these from the server)
-        setTimeout(() => {
-            const messagesDiv = document.getElementById('messages');
+            const data = await response.json();
+            messagesContainer.innerHTML = '';
 
-            const sampleMessages = [
-                { type: 'text', content: 'Hello there!', sent: false },
-                { type: 'text', content: 'Hi! How are you?', sent: true },
-                { type: 'text', content: 'I\'m doing well, thanks for asking!', sent: false }
-            ];
-
-            sampleMessages.forEach(msg => {
-                const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${msg.sent ? 'sent' : 'received'}`;
-                messageDiv.innerHTML = `
-                    <div class="message-info">${msg.sent ? 'You' : 'Other User'} (${new Date().toLocaleTimeString()})</div>
-                    <div class="message-content">${msg.content}</div>
-                `;
-                messagesDiv.appendChild(messageDiv);
+            data.messages.forEach(msg => {
+                addMessageToUI({
+                    id: msg.id,
+                    content: msg.content,
+                    type: msg.type,
+                    userId: msg.user_id,
+                    timestamp: msg.timestamp
+                });
             });
 
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }, 500);
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    messageForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const messageType = messageTypeSelect.value;
+        const content = messageInput.value.trim();
+
+        if (!validateInput(messageType, content)) return;
+
+        try {
+            showLoading(true);
+
+            const response = await fetch('/api/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    'type': messageType,
+                    'message-content': content
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(await response.text());
+            }
+
+            const result = await response.json();
+
+            // Добавляем новое сообщение в список
+            addMessageToUI({
+                id: result.message_id,
+                content: content,
+                type: messageType,
+                userId: currentUserId,
+                timestamp: new Date().toISOString()
+            });
+
+            messageInput.value = '';
+            messageInput.focus();
+
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            showLoading(false);
+        }
+    });
+
+    function addMessageToUI(message) {
+        const isMyMessage = message.userId === currentUserId;
+        const messageElement = document.createElement('div');
+
+        messageElement.className = `message ${isMyMessage ? 'sent' : 'received'}`;
+        messageElement.innerHTML = `
+            <div class="message-header">
+                <span class="message-type">${message.type}}</span>
+                <span class="message-time">${formatTime(message.timestamp)}</span>
+            </div>
+            <div class="message-content">${message.content}</div>
+            ${isMyMessage ? '<div class="message-status">✓</div>' : ''}
+        `;
+
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function validateInput(type, content) {
+        if (!content.trim()) {
+            showError('Message content cannot be empty!');
+            return false;
+        }
+        if (!type) {
+            showError('Please select a message type!');
+            return false;
+        }
+        return true;
+    }
+
+    function showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = message;
+        messagesContainer.prepend(errorDiv);
+        setTimeout(() => errorDiv.remove(), 3000);
+    }
+
+    function showLoading(isLoading) {
+        const button = messageForm.querySelector('button');
+        button.disabled = isLoading;
+        button.innerHTML = isLoading
+            ? '<div class="spinner"></div> Sending...'
+            : 'Send Message';
+    }
+
+    function formatTime(timestamp) {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+        });
     }
 });

@@ -5,12 +5,12 @@ import (
 	"ChatService/crud/internal/config"
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 	"text/template"
 )
@@ -49,6 +49,7 @@ func ClientMustLoad(cnf *config.Config, logger *slog.Logger) *ClientFabric {
 var frontFS embed.FS
 
 func setupRoutes(cli *client.ClientCRUD, logger *slog.Logger) *http.ServeMux {
+	tokenHardCode := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJRCI6MSwiZW1haWwiOiJleGFtcGxlQGNvbSIsImV4cCI6MTc0NjM2NTA5OCwidXNlcklEIjo5fQ.Rqttu4KLtP2d7PHzL2zZIvASUuIeWTQtI-DxWk0zk60"
 	mux := http.NewServeMux()
 
 	templates := template.Must(template.ParseFS(frontFS,
@@ -94,12 +95,11 @@ func setupRoutes(cli *client.ClientCRUD, logger *slog.Logger) *http.ServeMux {
 			}
 
 			messageType := r.FormValue("type")
-			content := r.FormValue("content")
-			userID, _ := strconv.ParseInt(r.FormValue("user_id"), 10, 64) // In real app, get from session/token
+			content := r.FormValue("message-content")
 
-			mid, err := cli.SentMessage(r.Context(), messageType, content, userID)
+			mid, err := cli.SentMessage(r.Context(), messageType, content, tokenHardCode)
 			if err != nil {
-				logger.Error("failed to send message", "error", err)
+				logger.Error("failed to send message", "error", err.Error())
 				http.Error(w, "Failed to send message", http.StatusInternalServerError)
 				return
 			}
@@ -108,23 +108,27 @@ func setupRoutes(cli *client.ClientCRUD, logger *slog.Logger) *http.ServeMux {
 			fmt.Fprintf(w, `{"status": "success", "message_id": %d}`, mid)
 
 		case "GET":
-			midStr := r.URL.Query().Get("id")
-			mid, err := strconv.ParseInt(midStr, 10, 64)
+			// Получаем все сообщения
+			messages, err := cli.ShowAllMessages(r.Context(), tokenHardCode)
 			if err != nil {
-				http.Error(w, "Invalid message ID", http.StatusBadRequest)
-				return
-			}
-
-			// In real app, validate user has access to this message
-			message, err := cli.GetMessage(r.Context(), "", mid) // Empty token for demo
-			if err != nil {
-				logger.Error("failed to get message", "error", err)
-				http.Error(w, "Failed to get message", http.StatusInternalServerError)
+				logger.Error("failed to get messages",
+					"error", err.Error())
+				http.Error(w, "Failed to retrieve messages", http.StatusInternalServerError)
 				return
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `{"status": "success", "message": %q}`, message)
+			response := map[string]interface{}{
+				"status":   "success",
+				"count":    len(messages),
+				"messages": messages,
+			}
+
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				logger.Error("failed to encode response",
+					"error", err.Error())
+				http.Error(w, "Internal server error", http.StatusInternalServerError)
+			}
 
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)

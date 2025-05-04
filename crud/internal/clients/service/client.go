@@ -1,6 +1,7 @@
 package service
 
 import (
+	"ChatService/crud/internal/domain/models"
 	crudv1 "ChatService/protos/gen/go/crud"
 	"context"
 	"fmt"
@@ -60,7 +61,7 @@ func InterceptorLogger(l *slog.Logger) grpclog.Logger {
 	})
 }
 
-func (c *ClientCRUD) GetMessage(ctx context.Context, token string, mid int64) (string, error) {
+func (c *ClientCRUD) GetMessage(ctx context.Context, token string, mid int64) (models.Message, error) {
 	const op = "crud.GetMessage"
 
 	resp, err := c.apiCRUD.GetMessage(ctx, &crudv1.GetMessageRequest{
@@ -68,18 +69,18 @@ func (c *ClientCRUD) GetMessage(ctx context.Context, token string, mid int64) (s
 		Mid:   mid,
 	})
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return models.Message{}, fmt.Errorf("%s: %w", op, err)
 	}
-	return resp.Message, nil
+	return models.Message{Content: resp.Content}, nil
 }
 
-func (c *ClientCRUD) SentMessage(ctx context.Context, typeMessage, token string, uid int64) (int64, error) {
+func (c *ClientCRUD) SentMessage(ctx context.Context, typeMessage, content, token string) (int64, error) {
 	const op = "crud.SentMessage"
 
 	resp, err := c.apiCRUD.SentMessage(ctx, &crudv1.SentMessageRequest{
-		Type:  typeMessage,
-		Token: token,
-		Uid:   uid,
+		Type:    typeMessage,
+		Token:   token,
+		Content: content,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
@@ -112,4 +113,22 @@ func (c *ClientCRUD) DeleteMessage(ctx context.Context, token string, mid int64)
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	return resp.Status, nil
+}
+
+func (c *ClientCRUD) ShowAllMessages(ctx context.Context, token string) ([]*crudv1.GetMessageResponse, error) {
+	const op = "client.ShowAllMessages"
+
+	req := &crudv1.ShowMessagesRequest{
+		Token: token,
+	}
+
+	resp, err := c.apiCRUD.ShowMessages(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	if len(resp.Message) == 0 {
+		return []*crudv1.GetMessageResponse{}, nil
+	}
+
+	return resp.Message, nil
 }

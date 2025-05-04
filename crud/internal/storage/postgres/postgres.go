@@ -65,12 +65,12 @@ func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string) 
 	return mid, nil
 }
 
-func (s *Storage) GetMessage(ctx context.Context, mid int64) (string, error) {
+func (s *Storage) GetMessage(ctx context.Context, mid int64) (models.Message, error) {
 	const op = "storage.postgres.GetMessage"
 
 	stmt, err := s.db.Prepare("SELECT * FROM messages WHERE id=?")
 	if err != nil {
-		return "", fmt.Errorf("%s: %w", op, err)
+		return models.Message{}, fmt.Errorf("%s: %w", op, err)
 	}
 	defer func() {
 		err := stmt.Close()
@@ -81,11 +81,11 @@ func (s *Storage) GetMessage(ctx context.Context, mid int64) (string, error) {
 	var message models.Message
 	if err := stmt.QueryRowContext(ctx, mid).Scan(&message.ID, &message.Content, &message.UserID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", fmt.Errorf("%s: %w", op, storage.ErrMessageNotExist)
+			return models.Message{}, fmt.Errorf("%s: %w", op, storage.ErrMessageNotExist)
 		}
-		return "", fmt.Errorf("%s: %w", op, err)
+		return models.Message{}, fmt.Errorf("%s: %w", op, err)
 	}
-	return message.Content, nil
+	return message, nil
 }
 
 func (s *Storage) DeleteMessage(ctx context.Context, mid int64) (bool, error) {
@@ -138,4 +138,73 @@ func (s *Storage) UpdateMessage(ctx context.Context, mid int64, newContent strin
 		return false, fmt.Errorf("%s: %w", op, err)
 	}
 	return n > 0, nil
+}
+
+func (s *Storage) ShowAllMessages(ctx context.Context, uid int64) ([]models.Message, error) {
+	const op = "storage.postgres.ShowAllMessages"
+	query := `
+        SELECT id, uid, content 
+        FROM messages 
+        ORDER BY id ASC
+    `
+	//TODO: integrate users
+	/*answer, err := s.IsBanned(ctx, uid)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	if !answer {
+		return nil, fmt.Errorf("%s: %w", op, storage.Banned)
+	}*/
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	defer rows.Close()
+
+	var messages []models.Message
+	for rows.Next() {
+		var msg models.Message
+		if err := rows.Scan(
+			&msg.ID,
+			&msg.UserID,
+			&msg.Content,
+		); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		messages = append(messages, msg)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if len(messages) == 0 {
+		return make([]models.Message, 0), storage.ErrNoMessagesFound
+	}
+
+	return messages, nil
+}
+
+func (s *Storage) IsBanned(ctx context.Context, uid int64) (bool, error) {
+	const op = "storage.postgres.IsBanned"
+	stmt, err := s.db.Prepare("SELECT role FROM users WHERE id=?")
+	if err != nil {
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+	defer func() {
+		err := stmt.Close()
+		if err != nil {
+		}
+	}()
+
+	var role int
+	if err := stmt.QueryRowContext(ctx, uid).Scan(&role); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, fmt.Errorf("%s: %w", op, storage.ErrMessageNotExist)
+		}
+		return false, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return role == 0, nil
 }
