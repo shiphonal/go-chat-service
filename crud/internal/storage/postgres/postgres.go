@@ -40,10 +40,10 @@ func New(storagePath string) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string) (int64, error) {
+func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string, typeOf int32, datetime string) (int64, error) {
 	const op = "storage.postgres.CreateMessage"
 
-	stmt, err := s.db.Prepare("INSERT INTO messages (uid, content) VALUES (?, ?)")
+	stmt, err := s.db.Prepare("INSERT INTO messages (content, uid, type, datetime) VALUES (?, ?, ?, ?)")
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -53,7 +53,7 @@ func (s *Storage) CreateMessage(ctx context.Context, uid int64, content string) 
 		}
 	}()
 
-	res, err := stmt.ExecContext(ctx, uid, content)
+	res, err := stmt.ExecContext(ctx, content, uid, typeOf, datetime)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)
 	}
@@ -79,11 +79,19 @@ func (s *Storage) GetMessage(ctx context.Context, mid int64) (models.Message, er
 	}()
 
 	var message models.Message
-	if err := stmt.QueryRowContext(ctx, mid).Scan(&message.ID, &message.Content, &message.UserID); err != nil {
+	if err := stmt.QueryRowContext(ctx, mid).Scan(&message.ID, &message.Content, &message.UserID, &message.Type, &message.DateTime); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return models.Message{}, fmt.Errorf("%s: %w", op, storage.ErrMessageNotExist)
 		}
 		return models.Message{}, fmt.Errorf("%s: %w", op, err)
+	}
+	switch message.Type {
+	case "1":
+		message.Type = "text"
+	case "2":
+		message.Type = "image"
+	case "3":
+		message.Type = "file"
 	}
 	return message, nil
 }
@@ -143,7 +151,7 @@ func (s *Storage) UpdateMessage(ctx context.Context, mid int64, newContent strin
 func (s *Storage) ShowAllMessages(ctx context.Context, uid int64) ([]models.Message, error) {
 	const op = "storage.postgres.ShowAllMessages"
 	query := `
-        SELECT id, uid, content 
+        SELECT id, uid, content, type, datetime 
         FROM messages 
         ORDER BY id ASC
     `
@@ -169,8 +177,18 @@ func (s *Storage) ShowAllMessages(ctx context.Context, uid int64) ([]models.Mess
 			&msg.ID,
 			&msg.UserID,
 			&msg.Content,
+			&msg.Type,
+			&msg.DateTime,
 		); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		switch msg.Type {
+		case "1":
+			msg.Type = "text"
+		case "2":
+			msg.Type = "image"
+		case "3":
+			msg.Type = "file"
 		}
 		messages = append(messages, msg)
 	}

@@ -13,8 +13,9 @@ service Message {
 }
 
 message SentMessageRequest {
+  string datetime = 1;
   string content = 2;
-  string type = 3;
+  int32 type = 3;
   string token = 4;
 }
 
@@ -31,7 +32,8 @@ message GetMessageResponse {
   int64 id = 1;
   string content = 2;
   string type = 3;
-  string timestamp = 4;
+  int64 uid = 4;
+  string datetime = 5;
 }
 
 message ShowMessagesRequest {

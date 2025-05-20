@@ -74,13 +74,24 @@ func (c *ClientCRUD) GetMessage(ctx context.Context, token string, mid int64) (m
 	return models.Message{Content: resp.Content}, nil
 }
 
-func (c *ClientCRUD) SentMessage(ctx context.Context, typeMessage, content, token string) (int64, error) {
+func (c *ClientCRUD) SentMessage(ctx context.Context, datetime, typeMessage, content, token string) (int64, error) {
 	const op = "crud.SentMessage"
 
+	typeOf := int32(0)
+	switch typeMessage {
+	case "text":
+		typeOf = 1
+	case "image":
+		typeOf = 2
+	case "file":
+		typeOf = 3
+	}
+
 	resp, err := c.apiCRUD.SentMessage(ctx, &crudv1.SentMessageRequest{
-		Type:    typeMessage,
-		Token:   token,
-		Content: content,
+		Type:     typeOf,
+		Token:    token,
+		Content:  content,
+		Datetime: datetime,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", op, err)

@@ -13,6 +13,7 @@ import (
 	"os"
 	"strings"
 	"text/template"
+	"time"
 )
 
 type ClientFabric struct {
@@ -49,7 +50,7 @@ func ClientMustLoad(cnf *config.Config, logger *slog.Logger) *ClientFabric {
 var frontFS embed.FS
 
 func setupRoutes(cli *client.ClientCRUD, logger *slog.Logger) *http.ServeMux {
-	tokenHardCode := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJRCI6MSwiZW1haWwiOiJleGFtcGxlQGNvbSIsImV4cCI6MTc0NjM2NTA5OCwidXNlcklEIjo5fQ.Rqttu4KLtP2d7PHzL2zZIvASUuIeWTQtI-DxWk0zk60"
+	tokenHardCode := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhcHBJRCI6MSwiZW1haWwiOiJleGFtcGxlQGNvbSIsImV4cCI6MTc0Nzc1MjE2MywidXNlcklEIjo5fQ.Ma6gNqIsJcgT65CFt_SX1H8WO1lSn21LjyD0fkbLkdw"
 	mux := http.NewServeMux()
 
 	templates := template.Must(template.ParseFS(frontFS,
@@ -96,8 +97,9 @@ func setupRoutes(cli *client.ClientCRUD, logger *slog.Logger) *http.ServeMux {
 
 			messageType := r.FormValue("type")
 			content := r.FormValue("message-content")
+			datetime := time.Now().String()[0:16]
 
-			mid, err := cli.SentMessage(r.Context(), messageType, content, tokenHardCode)
+			mid, err := cli.SentMessage(r.Context(), datetime, messageType, content, tokenHardCode)
 			if err != nil {
 				logger.Error("failed to send message", "error", err.Error())
 				http.Error(w, "Failed to send message", http.StatusInternalServerError)
@@ -105,7 +107,7 @@ func setupRoutes(cli *client.ClientCRUD, logger *slog.Logger) *http.ServeMux {
 			}
 
 			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `{"status": "success", "message_id": %d}`, mid)
+			fmt.Fprintf(w, `{"status": "success", "message_id": %d, "datetime": %q}`, mid, datetime)
 
 		case "GET":
 			// Получаем все сообщения

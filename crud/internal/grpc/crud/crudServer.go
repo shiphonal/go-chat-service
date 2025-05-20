@@ -15,7 +15,7 @@ import (
 type CRUD interface {
 	GetMessage(ctx context.Context, mid int64) (models.Message, error)
 	UpdateMessage(ctx context.Context, mid int64, newContent string) (bool, error)
-	SentMessage(ctx context.Context, uid int64, content string) (int64, error)
+	SentMessage(ctx context.Context, uid int64, content string, typeOf int32, datetime string) (int64, error)
 	DeleteMessage(ctx context.Context, uid int64) (bool, error)
 	ShowAllMessages(ctx context.Context, uid int64) ([]models.Message, error)
 }
@@ -36,7 +36,7 @@ func (s *serverCRUD) SentMessage(ctx context.Context, req *crudv1.SentMessageReq
 		return nil, status.Error(codes.Unauthenticated, "failed in decoding token "+TokenResponse.Error.Error())
 	}
 
-	id, err := s.crud.SentMessage(ctx, TokenResponse.UserID, req.GetContent())
+	id, err := s.crud.SentMessage(ctx, TokenResponse.UserID, req.GetContent(), req.GetType(), req.GetDatetime())
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "failed to create message")
 	}
@@ -72,7 +72,7 @@ func (s *serverCRUD) GetMessage(ctx context.Context, req *crudv1.GetMessageReque
 		}
 		return nil, status.Error(codes.Unauthenticated, "failed to get message")
 	}
-	return &crudv1.GetMessageResponse{Id: message.UserID, Content: message.Content, Type: message.Type}, nil
+	return &crudv1.GetMessageResponse{Id: message.ID, Content: message.Content, Type: message.Type, Uid: message.UserID}, nil
 }
 
 func (s *serverCRUD) UpdateMessage(ctx context.Context, req *crudv1.UpdateMessageRequest) (*crudv1.UpdateMessageResponse, error) {
@@ -108,9 +108,11 @@ func (s *serverCRUD) ShowMessages(ctx context.Context, req *crudv1.ShowMessagesR
 	var pbMessages []*crudv1.GetMessageResponse
 	for _, msg := range messages {
 		pbMessages = append(pbMessages, &crudv1.GetMessageResponse{
-			Id:      msg.ID,
-			Content: msg.Content,
-			Type:    msg.Type,
+			Id:       msg.ID,
+			Content:  msg.Content,
+			Uid:      msg.UserID,
+			Type:     msg.Type,
+			Datetime: msg.DateTime,
 		})
 	}
 

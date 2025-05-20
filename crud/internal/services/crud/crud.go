@@ -15,18 +15,18 @@ type CRUD struct {
 }
 
 type MessageCRUDer interface {
-	CreateMessage(ctx context.Context, uid int64, content string) (int64, error)
+	CreateMessage(ctx context.Context, uid int64, content string, typeOf int32, datetime string) (int64, error)
 	GetMessage(ctx context.Context, mid int64) (models.Message, error)
 	DeleteMessage(ctx context.Context, mid int64) (bool, error)
 	UpdateMessage(ctx context.Context, mid int64, newContent string) (bool, error)
 	ShowAllMessages(ctx context.Context, uid int64) ([]models.Message, error)
 }
 
-func (m *CRUD) SentMessage(ctx context.Context, uid int64, content string) (int64, error) {
+func (m *CRUD) SentMessage(ctx context.Context, uid int64, content string, typeOf int32, datetime string) (int64, error) {
 	const op = "services.crud.SentMessage"
 	log := m.Log.With(slog.String("op", op))
 
-	id, err := m.MessageCRUDer.CreateMessage(ctx, uid, content)
+	id, err := m.MessageCRUDer.CreateMessage(ctx, uid, content, typeOf, datetime)
 	if err != nil {
 		log.Error("Failed to create message", slog.String("err", err.Error()))
 		return 0, fmt.Errorf("%s: %w", op, err)

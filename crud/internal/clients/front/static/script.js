@@ -3,22 +3,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const messagesContainer = document.getElementById('messages');
     const messageInput = document.getElementById('message-content');
     const messageTypeSelect = document.getElementById('message-type');
+    const currentUserId = 9; // Пример ID пользователя
 
-    // Текущий пользователь (из токена)
-    // TODO: put userID, Add Time and Type in messages
-    const currentUserId = 9; // Из вашего хардкодного токена
-
-    // Загрузка сообщений при старте
     loadMessages();
 
     async function loadMessages() {
         try {
             showLoading(true);
             const response = await fetch('/api/messages');
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
             const data = await response.json();
             messagesContainer.innerHTML = '';
@@ -28,11 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     id: msg.id,
                     content: msg.content,
                     type: msg.type,
-                    userId: msg.user_id,
-                    timestamp: msg.timestamp
+                    userId: msg.uid,
+                    timestamp: msg.datetime,
                 });
             });
-
         } catch (error) {
             showError(error.message);
         } finally {
@@ -42,7 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     messageForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-
         const messageType = messageTypeSelect.value;
         const content = messageInput.value.trim();
 
@@ -50,36 +41,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             showLoading(true);
-
             const response = await fetch('/api/messages', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     'type': messageType,
-                    'message-content': content
+                    'message-content': content,
                 })
             });
 
-            if (!response.ok) {
-                throw new Error(await response.text());
-            }
+            if (!response.ok) throw new Error(await response.text());
 
             const result = await response.json();
 
-            // Добавляем новое сообщение в список
             addMessageToUI({
                 id: result.message_id,
                 content: content,
                 type: messageType,
                 userId: currentUserId,
-                timestamp: new Date().toISOString()
+                timestamp: result.datetime
             });
 
             messageInput.value = '';
-            messageInput.focus();
-
         } catch (error) {
             showError(error.message);
         } finally {
@@ -94,11 +77,10 @@ document.addEventListener('DOMContentLoaded', function() {
         messageElement.className = `message ${isMyMessage ? 'sent' : 'received'}`;
         messageElement.innerHTML = `
             <div class="message-header">
-                <span class="message-type">${message.type}}</span>
-                <span class="message-time">${formatTime(message.timestamp)}</span>
+                <span class="message-type">${message.type}</span>
+                <span class="message-time">${message.timestamp}</span>
             </div>
             <div class="message-content">${message.content}</div>
-            ${isMyMessage ? '<div class="message-status">✓</div>' : ''}
         `;
 
         messagesContainer.appendChild(messageElement);
@@ -131,14 +113,5 @@ document.addEventListener('DOMContentLoaded', function() {
         button.innerHTML = isLoading
             ? '<div class="spinner"></div> Sending...'
             : 'Send Message';
-    }
-
-    function formatTime(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
     }
 });
